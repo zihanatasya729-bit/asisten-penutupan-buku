@@ -60,12 +60,10 @@ DEFAULTS = {
     "laba": 0.0,
 }
 
-
 def init_state():
     for k, v in DEFAULTS.items():
         if k not in st.session_state:
             st.session_state[k] = v.copy() if isinstance(v, (list, dict)) else v
-
 
 def reset_state():
     for k in DEFAULTS:
@@ -86,6 +84,10 @@ def get_adjusted_tb():
         return None
 
     base = tb.copy()
+    
+    # PERBAIKAN BUG: Paksa kolom Kode menjadi string agar bisa digabung (merge)
+    base["Kode"] = base["Kode"].astype(str)
+    
     for c in ["Debit", "Kredit"]:
         base[c] = pd.to_numeric(base[c], errors="coerce").fillna(0)
 
@@ -99,14 +101,20 @@ def get_adjusted_tb():
                      "Debit Adj", "Kredit Adj", "Debit Akhir", "Kredit Akhir"]]
 
     adj_df = pd.DataFrame(adj)
+    
+    # PERBAIKAN BUG: Paksa kolom Kode di penyesuaian menjadi string
+    adj_df["Kode"] = adj_df["Kode"].astype(str)
+    
     agg = adj_df.groupby("Kode", as_index=False).agg(
         Nama_Akun_Adj=("Nama Akun", "first"),
         Debit_Adj=("Debit", "sum"),
         Kredit_Adj=("Kredit", "sum"),
     )
+    
     m = base.merge(agg, on="Kode", how="outer")
     m["Nama Akun"] = m["Nama Akun"].fillna(m["Nama_Akun_Adj"])
     m["Tipe"] = m["Tipe"].fillna("Belum diklasifikasi")
+    
     for c in ["Debit", "Kredit", "Debit_Adj", "Kredit_Adj"]:
         m[c] = pd.to_numeric(m[c], errors="coerce").fillna(0)
 
