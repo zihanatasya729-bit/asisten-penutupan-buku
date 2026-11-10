@@ -93,12 +93,12 @@ if menu == "🏠 Dashboard":
     else:
         c3.metric("Total Debit", "-")
         c4.metric("Total Kredit", "-")
-        st.warning("Silakan upload trial balance atau muat data demo di menu **Data & Upload**.")
+        st.warning("Silakan upload trial balance di menu **Data & Upload**.")
 
     st.markdown("---")
     st.subheader("🚀 Alur Closing yang Disarankan")
     st.markdown(
-        "1. **📤 Data & Upload** — upload TB atau muat data demo\n"
+        "1. **📤 Data & Upload** — upload TB Anda\n"
         "2. **✅ Checklist** — pastikan semua prosedur closing sudah dilakukan\n"
         "3. **📝 Jurnal Penyesuaian** — catat penyesuaian (penyusutan, akrual, dll.)\n"
         "4. **🏦 Rekonsiliasi Bank** — cocokkan saldo kas\n"
@@ -115,25 +115,23 @@ elif menu == "📤 Data & Upload":
     st.write("Format kolom wajib: **Kode, Nama Akun, Tipe, Debit, Kredit**")
     st.caption("Tipe yang valid: Aset, Kewajiban, Ekuitas, Pendapatan, Beban")
 
+    # Tombol download template
     template = DEMO_TB.head(0).to_csv(index=False).encode()
     st.download_button("⬇️ Unduh Template CSV", template, "template_tb.csv", "text/csv")
+    
+    st.markdown("---")
 
-    col1, col2 = st.columns(2)
-    if col1.button("🎲 Muat Data Demo", use_container_width=True):
-        st.session_state.tb = DEMO_TB.copy()
-        st.success("Data demo berhasil dimuat.")
-        st.rerun()
-
-    uploaded = col2.file_uploader("Atau upload file:", type=["xlsx", "csv"])
+    # File uploader (Full width)
+    uploaded = st.file_uploader("Upload file Trial Balance (CSV/Excel):", type=["xlsx", "csv"])
+    
     if uploaded:
         try:
-            # Perbaikan: Menggunakan sep=None agar otomatis mendeteksi koma atau titik koma
+            # Membaca file (otomatis mendeteksi koma atau titik koma)
             if uploaded.name.endswith(".csv"):
                 df = pd.read_csv(uploaded, sep=None, engine='python')
             else:
                 df = pd.read_excel(uploaded)
             
-            # Perbaikan: Cek apakah file kosong
             if df.empty:
                 st.warning("⚠️ File yang diupload kosong. Pastikan ada baris data di bawah judul kolom.")
             else:
@@ -141,14 +139,22 @@ elif menu == "📤 Data & Upload":
                 if not need.issubset(df.columns):
                     st.error(f"Kolom tidak lengkap. Wajib ada: {need}. Ditemukan: {list(df.columns)}")
                 else:
-                    st.session_state.tb = df
-                    st.success("✅ Trial balance berhasil diupload.")
-                    st.rerun()
+                    # Tampilkan Preview
+                    st.write("### Preview Data (Belum Diproses)")
+                    st.dataframe(df, use_container_width=True)
+                    
+                    # TOMBOL PROSES DATA
+                    if st.button("✅ Proses Data Trial Balance", type="primary"):
+                        st.session_state.tb = df
+                        st.success("✅ Data Trial Balance berhasil diproses!")
+                        st.rerun()
         except Exception as exc:
             st.error(f"Gagal membaca file: {exc}")
 
+    # Tampilkan data yang sedang aktif (jika sudah diproses)
     if st.session_state.tb is not None:
-        st.subheader("Preview Trial Balance")
+        st.markdown("---")
+        st.subheader("📌 Data Trial Balance Aktif")
         st.dataframe(st.session_state.tb, use_container_width=True)
 
         tb = st.session_state.tb
@@ -157,7 +163,7 @@ elif menu == "📤 Data & Upload":
         st.write(f"Total Debit: **Rp {d:,.0f}** | Total Kredit: **Rp {k:,.0f}** | "
                  f"Selisih: **Rp {d - k:,.0f}**")
 
-        if st.button("🗑️ Hapus data"):
+        if st.button("🗑️ Hapus Data Aktif"):
             st.session_state.tb = None
             st.rerun()
 
