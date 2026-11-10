@@ -115,9 +115,14 @@ elif menu == "📤 Data & Upload":
     st.write("Format kolom wajib: **Kode, Nama Akun, Tipe, Debit, Kredit**")
     st.caption("Tipe yang valid: Aset, Kewajiban, Ekuitas, Pendapatan, Beban")
 
-    # Tombol download template
-    template = DEMO_TB.head(0).to_csv(index=False).encode()
-    st.download_button("⬇️ Unduh Template CSV", template, "template_tb.csv", "text/csv")
+    # PERUBAHAN DISINI: Menghapus .head(0) agar template berisi data contoh
+    template = DEMO_TB.to_csv(index=False).encode()
+    st.download_button(
+        "⬇️ Unduh Template CSV (Berisi Contoh Data)", 
+        template, 
+        "template_tb.csv", 
+        "text/csv"
+    )
     
     st.markdown("---")
 
