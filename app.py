@@ -127,15 +127,23 @@ elif menu == "📤 Data & Upload":
     uploaded = col2.file_uploader("Atau upload file:", type=["xlsx", "csv"])
     if uploaded:
         try:
-            df = (pd.read_csv(uploaded) if uploaded.name.endswith(".csv")
-                  else pd.read_excel(uploaded))
-            need = {"Kode", "Nama Akun", "Tipe", "Debit", "Kredit"}
-            if not need.issubset(df.columns):
-                st.error(f"Kolom tidak lengkap. Wajib ada: {need}. Ditemukan: {list(df.columns)}")
+            # Perbaikan: Menggunakan sep=None agar otomatis mendeteksi koma atau titik koma
+            if uploaded.name.endswith(".csv"):
+                df = pd.read_csv(uploaded, sep=None, engine='python')
             else:
-                st.session_state.tb = df
-                st.success("Trial balance berhasil diupload.")
-                st.rerun()
+                df = pd.read_excel(uploaded)
+            
+            # Perbaikan: Cek apakah file kosong
+            if df.empty:
+                st.warning("⚠️ File yang diupload kosong. Pastikan ada baris data di bawah judul kolom.")
+            else:
+                need = {"Kode", "Nama Akun", "Tipe", "Debit", "Kredit"}
+                if not need.issubset(df.columns):
+                    st.error(f"Kolom tidak lengkap. Wajib ada: {need}. Ditemukan: {list(df.columns)}")
+                else:
+                    st.session_state.tb = df
+                    st.success("✅ Trial balance berhasil diupload.")
+                    st.rerun()
         except Exception as exc:
             st.error(f"Gagal membaca file: {exc}")
 
